@@ -255,6 +255,81 @@ export const ofertasRouter = router({
       return { html: generarHtmlOferta(oferta, cliente, lote) };
     }),
 
+  // Send offer via Gmail (generates text for MCP gmail tool)
+  prepareEmail: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const oferta = await getOfertaById(input.id);
+      if (!oferta) throw new Error("Oferta no encontrada");
+      const cliente = await getClienteById(oferta.clienteId);
+      if (!cliente) throw new Error("Cliente no encontrado");
+      if (!cliente.email) throw new Error("El cliente no tiene email registrado");
+
+      const escenarioLabel = oferta.escenario === "5-7kg" ? "Cochinillos 5-7 kg"
+        : oferta.escenario === "20-21kg" ? "Lechones Transición 20-21 kg"
+        : "Cebo Final 100-110 kg";
+
+      const esPorUnidad = oferta.escenario === "5-7kg" || oferta.escenario === "20-21kg";
+      const unidadPrecio = esPorUnidad ? "€/unidad" : "€/kg vivo";
+
+      const subject = `Oferta Comercial ${oferta.codigo} - VentiPro`;
+      const content = [
+        `Estimado/a ${cliente.nombre},`,
+        ``,
+        `Nos complace presentarle la siguiente oferta comercial desde VentiPro - Gestión Porcina Integral.`,
+        ``,
+        `DETALLE DE LA OFERTA ${oferta.codigo}`,
+        `${"-".repeat(40)}`,
+        `Producto: ${escenarioLabel}`,
+        `Nº de animales: ${oferta.numAnimales}`,
+        `Peso estimado: ${oferta.pesoEstimado} kg/animal`,
+        `Precio: ${oferta.precioKg} ${unidadPrecio}`,
+        `PRECIO TOTAL: ${parseFloat(oferta.precioTotal).toLocaleString("es-ES", { minimumFractionDigits: 2 })} EUR`,
+        oferta.fechaDisponibilidad ? `Disponibilidad: ${new Date(oferta.fechaDisponibilidad).toLocaleDateString("es-ES")}` : "",
+        ``,
+        oferta.condiciones ? `Condiciones: ${oferta.condiciones}` : "",
+        oferta.condiciones ? `` : "",
+        `Esta oferta tiene una validez de 7 días naturales desde la fecha de emisión.`,
+        `Para confirmar o solicitar más información, no dude en contactarnos.`,
+        ``,
+        `Atentamente,`,
+        `VentiPro - Gestión Porcina Integral`,
+        `Explotación porcina de ciclo completo · Aragón / Soria`,
+        ``,
+        `---`,
+        `Oferta generada automáticamente el ${new Date().toLocaleDateString("es-ES")}`,
+      ].filter(line => line !== "").join("\n");
+
+      // Update offer status to "enviada"
+      await updateOferta(input.id, { estado: "enviada" });
+
+      await logActividad({
+        tipo: "oferta_enviada_email",
+        descripcion: `Oferta ${oferta.codigo} preparada para envío por email a ${cliente.email}`,
+        modulo: "ofertas",
+        userId: ctx.user.id,
+      });
+
+      // Notify owner
+      try {
+        await notifyOwner({
+          title: "📧 Oferta Enviada por Email",
+          content: `Oferta ${oferta.codigo} enviada a ${cliente.nombre} (${cliente.email}) - ${parseFloat(oferta.precioTotal).toLocaleString("es-ES")} €`,
+        });
+      } catch (e) {
+        console.warn("Failed to notify owner:", e);
+      }
+
+      return {
+        to: cliente.email,
+        clienteNombre: cliente.nombre,
+        subject,
+        content,
+        ofertaCodigo: oferta.codigo,
+        precioTotal: oferta.precioTotal,
+      };
+    }),
+
   // Generate and store PDF of offer in S3
   generatePdf: protectedProcedure
     .input(z.object({ id: z.number() }))

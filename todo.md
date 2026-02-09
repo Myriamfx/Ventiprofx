@@ -96,3 +96,20 @@
 - [x] Corregir en página de ofertas (Ofertas.tsx)
 - [x] Corregir en página de análisis (Analisis.tsx)
 - [x] Corregir en CRM (Crm.tsx) - tipo comprador cochinillo
+
+## Bugs - Validación Centros
+- [x] Fix: Error al crear centro - provincia y ccaa ahora son opcionales con auto-rellenado inteligente por tipo
+
+## Fase 9: Importación CSV de Clientes
+- [x] Crear archivo CSV de ejemplo con clientes realistas del sector porcino (20 clientes)
+- [x] Verificar que la importación funciona correctamente en el CRM (CSV disponible en /clientes_ejemplo.csv)
+
+## Fase 10: Integración Gmail para envío de ofertas
+- [x] Explorar herramientas Gmail MCP disponibles (gmail_send_messages)
+- [x] Implementar endpoint prepareEmail en router de ofertas
+- [x] Plantilla de email profesional con datos de oferta, precios por unidad/kg
+- [x] Actualizar frontend de Ofertas con botón de envío por email + diálogo de confirmación
+- [x] Probar envío real de email vía Gmail MCP (Message ID: 19c43feb78ba277a)
+- [x] Registrar actividad de envío en log Kit Digital + notificación al propietario
+- [x] Banner de confirmación de email enviado en la interfaz
+- [x] Actualización automática del estado de oferta a "enviada"

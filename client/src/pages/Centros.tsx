@@ -24,6 +24,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Plus, Building2, MapPin, Pencil, Trash2 } from "lucide-react";
 
+// Auto-rellenado inteligente según tipo de centro
+const DEFAULTS_POR_TIPO: Record<string, { provincia: string; ccaa: string }> = {
+  cria: { provincia: "Zaragoza", ccaa: "Aragón" },
+  engorde: { provincia: "Soria", ccaa: "Castilla y León" },
+};
+
 function CentroForm({
   onSubmit,
   initial,
@@ -37,18 +43,27 @@ function CentroForm({
     nombre: initial?.nombre || "",
     tipo: initial?.tipo || "cria",
     ubicacion: initial?.ubicacion || "",
-    provincia: initial?.provincia || "",
-    ccaa: initial?.ccaa || "",
+    provincia: initial?.provincia || DEFAULTS_POR_TIPO["cria"].provincia,
+    ccaa: initial?.ccaa || DEFAULTS_POR_TIPO["cria"].ccaa,
     plazasTotales: initial?.plazasTotales?.toString() || "",
     plazasOcupadas: initial?.plazasOcupadas?.toString() || "0",
     descripcion: initial?.descripcion || "",
   });
 
+  const handleTipoChange = (tipo: string) => {
+    const defaults = DEFAULTS_POR_TIPO[tipo] || { provincia: "", ccaa: "" };
+    // Solo auto-rellenar si los campos están vacíos o tienen los valores por defecto del tipo anterior
+    const prevDefaults = DEFAULTS_POR_TIPO[form.tipo] || { provincia: "", ccaa: "" };
+    const newProvincia = (!form.provincia || form.provincia === prevDefaults.provincia) ? defaults.provincia : form.provincia;
+    const newCcaa = (!form.ccaa || form.ccaa === prevDefaults.ccaa) ? defaults.ccaa : form.ccaa;
+    setForm({ ...form, tipo, provincia: newProvincia, ccaa: newCcaa });
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Nombre del centro</Label>
+          <Label>Nombre del centro <span className="text-destructive">*</span></Label>
           <Input
             value={form.nombre}
             onChange={(e) => setForm({ ...form, nombre: e.target.value })}
@@ -56,10 +71,10 @@ function CentroForm({
           />
         </div>
         <div className="space-y-2">
-          <Label>Tipo</Label>
+          <Label>Tipo <span className="text-destructive">*</span></Label>
           <Select
             value={form.tipo}
-            onValueChange={(v) => setForm({ ...form, tipo: v })}
+            onValueChange={handleTipoChange}
           >
             <SelectTrigger>
               <SelectValue />
@@ -73,11 +88,11 @@ function CentroForm({
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label>Ubicación</Label>
+          <Label>Ubicación <span className="text-destructive">*</span></Label>
           <Input
             value={form.ubicacion}
             onChange={(e) => setForm({ ...form, ubicacion: e.target.value })}
-            placeholder="Dirección"
+            placeholder="Dirección o localidad"
           />
         </div>
         <div className="space-y-2">
@@ -99,7 +114,7 @@ function CentroForm({
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Plazas totales</Label>
+          <Label>Plazas totales <span className="text-destructive">*</span></Label>
           <Input
             type="number"
             value={form.plazasTotales}
@@ -130,14 +145,17 @@ function CentroForm({
         />
       </div>
       <Button
-        onClick={() =>
+        onClick={() => {
+          if (!form.nombre.trim()) { toast.error("El nombre es obligatorio"); return; }
+          if (!form.ubicacion.trim()) { toast.error("La ubicación es obligatoria"); return; }
+          if (!form.plazasTotales || parseInt(form.plazasTotales) <= 0) { toast.error("Las plazas totales deben ser mayor que 0"); return; }
           onSubmit({
             ...form,
             plazasTotales: parseInt(form.plazasTotales) || 0,
             plazasOcupadas: parseInt(form.plazasOcupadas) || 0,
-          })
-        }
-        disabled={loading || !form.nombre || !form.ubicacion}
+          });
+        }}
+        disabled={loading}
         className="w-full"
       >
         {initial ? "Guardar cambios" : "Crear centro"}
@@ -157,7 +175,7 @@ export default function CentrosPage() {
       setDialogOpen(false);
       toast.success("Centro creado correctamente");
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error("Error al crear centro: " + e.message),
   });
   const updateMutation = trpc.centros.update.useMutation({
     onSuccess: () => {
@@ -165,14 +183,14 @@ export default function CentrosPage() {
       setEditingCentro(null);
       toast.success("Centro actualizado");
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error("Error al actualizar: " + e.message),
   });
   const deleteMutation = trpc.centros.delete.useMutation({
     onSuccess: () => {
       utils.centros.list.invalidate();
       toast.success("Centro eliminado");
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error("Error al eliminar: " + e.message),
   });
 
   if (centrosQuery.isLoading) {
@@ -281,7 +299,9 @@ export default function CentrosPage() {
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3" />
                     <span>
-                      {centro.ubicacion} · {centro.provincia} ({centro.ccaa})
+                      {centro.ubicacion}
+                      {centro.provincia && ` · ${centro.provincia}`}
+                      {centro.ccaa && ` (${centro.ccaa})`}
                     </span>
                   </div>
                   {centro.descripcion && (

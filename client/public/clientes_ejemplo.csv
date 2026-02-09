@@ -1,0 +1,21 @@
+nombre;empresa;email;telefono;tipo;prioridad;ccaa;provincia;municipio;especialidad;volumenHabitual;origen
+Carlos Martínez López;Agropecuaria del Ebro S.L.;carlos.martinez@agroebro.es;976 54 32 10;comprador_cochinillo;alta;Aragón;Zaragoza;Ejea de los Caballeros;Cochinillos 5-7 kg;300 cab/mes;Feria Zaragoza
+María Fernández García;Cárnicas Fernández S.A.;mfernandez@carnicasfernandez.com;975 23 45 67;comprador_cebo;alta;Castilla y León;Soria;Ágreda;Cebo final 100-110 kg;500 cab/mes;Referido
+Antonio Ruiz Navarro;Piensos del Valle S.L.;aruiz@piensosvallesl.es;974 67 89 01;proveedor;media;Aragón;Huesca;Barbastro;Pienso transición y cebo;150 tn/mes;Web
+Laura Sánchez Pérez;Ganadera Tierras Altas S.L.;lsanchez@ganaderatierrasaltas.es;975 34 56 78;comprador_lechon;alta;Castilla y León;Soria;San Pedro Manrique;Lechones 20 kg;200 cab/mes;Visita comercial
+Pedro Gómez Hernández;Veterinaria Moncayo;pgomez@vetmoncayo.com;976 78 90 12;proveedor;media;Aragón;Zaragoza;Tarazona;Servicios veterinarios;;Referido
+Isabel Torres Moreno;Distribuciones Cárnicas Levante;itorres@dclevante.com;963 45 67 89;comprador_cebo;media;Comunidad Valenciana;Valencia;Requena;Cebo final canal;400 cab/mes;Feria Alimentaria
+Javier López Díaz;Cooperativa Ganadera del Jalón;jlopez@coopjalon.es;976 12 34 56;comprador_cochinillo;alta;Aragón;Zaragoza;Calatayud;Cochinillos destete;250 cab/mes;Cooperativa
+Ana María Blasco Serrano;Porcino Cinco Villas S.L.;ablasco@porcinocincovillas.es;976 89 01 23;comprador_lechon;media;Aragón;Zaragoza;Sos del Rey Católico;Lechones transición;150 cab/mes;Feria Zaragoza
+Roberto Jiménez Calvo;Matadero Comarcal del Moncayo;rjimenez@mataderomoncayo.es;976 56 78 90;comprador_cebo;alta;Aragón;Zaragoza;Borja;Cebo final matadero;600 cab/mes;Visita comercial
+Marta Delgado Ruiz;Agroganadera Numancia S.L.;mdelgado@agronumancia.es;975 67 89 01;comprador_lechon;media;Castilla y León;Soria;Almazán;Lechones 20 kg;180 cab/mes;Web
+Francisco Herrero Martín;Transportes Ganaderos Herrero;fherrero@tgherrero.com;976 23 45 67;proveedor;baja;Aragón;Zaragoza;Zaragoza;Transporte animales vivos;;Páginas Amarillas
+Elena Pascual Gracia;Granja La Dehesa S.L.;epascual@granjaladehesa.es;975 89 01 23;comprador_cochinillo;alta;Castilla y León;Soria;Medinaceli;Cochinillos para cría;200 cab/mes;Referido
+Miguel Ángel Soriano;Cárnicas Soriano e Hijos;masoriano@carnicassoriano.com;978 34 56 78;comprador_cebo;media;Aragón;Teruel;Alcañiz;Cebo final ibérico;300 cab/mes;Feria
+Pilar Romero Lázaro;Nutrición Animal Romero;promero@nutricionromero.es;974 45 67 89;proveedor;media;Aragón;Huesca;Monzón;Pienso starter y pre-starter;80 tn/mes;Web
+David Catalán Muñoz;Integración Porcina Catalán;dcatalan@intporcinacatalan.es;976 90 12 34;comprador_lechon;alta;Aragón;Zaragoza;Daroca;Lechones 20 kg integración;350 cab/mes;Feria Zaragoza
+Carmen Vidal Esteban;Laboratorio Veterinario Vidal;cvidal@labvidal.es;975 12 34 56;proveedor;baja;Castilla y León;Soria;Soria;Análisis sanitarios;;Colegio Veterinarios
+Andrés Navarro Gil;Cebadero Los Llanos S.L.;anavarro@cebaderoloslanos.es;975 56 78 90;comprador_cebo;alta;Castilla y León;Soria;Berlanga de Duero;Cebo final 100-110 kg;450 cab/mes;Visita comercial
+Lucía Aranda Pérez;Genética Porcina Aranda;laranda@geneticaporcinaaranda.es;976 67 89 01;proveedor;media;Aragón;Zaragoza;Zaragoza;Genética y semen porcino;;Congreso ANAPORC
+Raúl Bermejo Sanz;Carnes Bermejo S.A.;rbermejo@carnesbermejo.com;941 78 90 12;comprador_cebo;media;La Rioja;La Rioja;Calahorra;Cebo final canal;350 cab/mes;Feria Alimentaria
+Silvia Ochoa Martínez;Granja El Pilar S.L.;sochoa@granjaelpilar.es;948 89 01 23;comprador_cochinillo;media;Navarra;Navarra;Tudela;Cochinillos 5-7 kg;150 cab/mes;Referido
