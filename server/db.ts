@@ -135,9 +135,9 @@ export async function deleteLote(id: number) {
 // ============================================================
 export async function getParametrosActivos() {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return null;
   const result = await db.select().from(parametrosEconomicos).where(eq(parametrosEconomicos.activo, 1)).limit(1);
-  return result[0];
+  return result.length > 0 ? result[0] : null;
 }
 
 export async function getAllParametros() {

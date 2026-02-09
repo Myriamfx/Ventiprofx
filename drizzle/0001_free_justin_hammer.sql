@@ -1,0 +1,123 @@
+CREATE TABLE `actividad_log` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`tipo` varchar(100) NOT NULL,
+	`descripcion` text NOT NULL,
+	`modulo` varchar(100) NOT NULL,
+	`metadata` json,
+	`userId` int,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `actividad_log_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `centros` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`nombre` varchar(200) NOT NULL,
+	`tipo` enum('cria','engorde') NOT NULL,
+	`ubicacion` varchar(200) NOT NULL,
+	`provincia` varchar(100) NOT NULL,
+	`ccaa` varchar(100) NOT NULL,
+	`plazasTotales` int NOT NULL DEFAULT 0,
+	`plazasOcupadas` int NOT NULL DEFAULT 0,
+	`descripcion` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `centros_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `clientes` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`nombre` varchar(200) NOT NULL,
+	`empresa` varchar(200),
+	`email` varchar(320),
+	`telefono` varchar(30),
+	`web` varchar(500),
+	`tipoCliente` enum('comprador_5_7','comprador_20_21','comprador_cebo','matadero','intermediario','otro') NOT NULL DEFAULT 'otro',
+	`estado` enum('nuevo','contactado','propuesta_enviada','negociacion','cerrado_ganado','cerrado_perdido') NOT NULL DEFAULT 'nuevo',
+	`prioridad` enum('alta','media','baja') NOT NULL DEFAULT 'media',
+	`preferente` int NOT NULL DEFAULT 0,
+	`ccaa` varchar(100),
+	`provincia` varchar(100),
+	`municipio` varchar(200),
+	`especialidad` varchar(200),
+	`volumenHabitual` varchar(100),
+	`origenCliente` varchar(200),
+	`notas` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `clientes_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `lotes` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`codigo` varchar(50) NOT NULL,
+	`centroId` int NOT NULL,
+	`numAnimales` int NOT NULL,
+	`numBajas` int NOT NULL DEFAULT 0,
+	`pesoActual` decimal(8,2) NOT NULL DEFAULT '0',
+	`pesoObjetivo` decimal(8,2),
+	`calidad` enum('alta','media','baja') NOT NULL DEFAULT 'media',
+	`fase` enum('lactancia','transicion','cebo','vendido') NOT NULL DEFAULT 'lactancia',
+	`fechaNacimiento` timestamp,
+	`fechaDestete` timestamp,
+	`fechaEntradaCebo` timestamp,
+	`fechaVentaPrevista` timestamp,
+	`escenarioSeleccionado` enum('5-7kg','20-21kg','cebo'),
+	`notas` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `lotes_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `ofertas` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`codigo` varchar(50) NOT NULL,
+	`loteId` int,
+	`clienteId` int NOT NULL,
+	`escenario` enum('5-7kg','20-21kg','cebo') NOT NULL,
+	`numAnimales` int NOT NULL,
+	`pesoEstimado` decimal(8,2) NOT NULL,
+	`precioKg` decimal(8,2) NOT NULL,
+	`precioTotal` decimal(12,2) NOT NULL,
+	`fechaDisponibilidad` timestamp,
+	`condiciones` text,
+	`textoOferta` text,
+	`estado` enum('borrador','enviada','aceptada','rechazada','expirada') NOT NULL DEFAULT 'borrador',
+	`pdfUrl` varchar(1000),
+	`pdfKey` varchar(500),
+	`emailEnviado` int NOT NULL DEFAULT 0,
+	`fechaEnvio` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `ofertas_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `parametros_economicos` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`nombre` varchar(200) NOT NULL,
+	`precioVenta5_7` decimal(8,2) NOT NULL DEFAULT '3.50',
+	`precioVenta20_21` decimal(8,2) NOT NULL DEFAULT '2.80',
+	`precioVentaCebo` decimal(8,2) NOT NULL DEFAULT '1.45',
+	`costePienso5_7` decimal(8,2) NOT NULL DEFAULT '8.50',
+	`costePienso20_21` decimal(8,2) NOT NULL DEFAULT '22.00',
+	`costePiensoCebo` decimal(8,2) NOT NULL DEFAULT '95.00',
+	`costeSanidad5_7` decimal(8,2) NOT NULL DEFAULT '1.50',
+	`costeSanidad20_21` decimal(8,2) NOT NULL DEFAULT '3.00',
+	`costeSanidadCebo` decimal(8,2) NOT NULL DEFAULT '5.50',
+	`mortalidad5_7` decimal(5,2) NOT NULL DEFAULT '8.00',
+	`mortalidad20_21` decimal(5,2) NOT NULL DEFAULT '3.00',
+	`mortalidadCebo` decimal(5,2) NOT NULL DEFAULT '2.00',
+	`costeManoObra` decimal(10,2) NOT NULL DEFAULT '3500.00',
+	`costeEnergia` decimal(10,2) NOT NULL DEFAULT '1200.00',
+	`costeAmortizacion` decimal(10,2) NOT NULL DEFAULT '800.00',
+	`costePurines` decimal(10,2) NOT NULL DEFAULT '400.00',
+	`indicConversion5_7` decimal(5,2) NOT NULL DEFAULT '1.80',
+	`indicConversion20_21` decimal(5,2) NOT NULL DEFAULT '2.20',
+	`indicConversionCebo` decimal(5,2) NOT NULL DEFAULT '2.80',
+	`diasEstancia5_7` int NOT NULL DEFAULT 28,
+	`diasEstancia20_21` int NOT NULL DEFAULT 65,
+	`diasEstanciaCebo` int NOT NULL DEFAULT 160,
+	`activo` int NOT NULL DEFAULT 1,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `parametros_economicos_id` PRIMARY KEY(`id`)
+);

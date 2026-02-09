@@ -1,17 +1,31 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import { getParametrosActivos, getAllParametros, createParametros, updateParametros, getCentros, logActividad } from "../db";
+import { obtenerPreciosActuales, estimarPrecioFuturo } from "../services/preciosMercado";
+
+// ============================================================
+// TIPOS
+// ============================================================
+
+type DesgloseCostes = {
+  costeFaseCria: number;
+  costeFaseTransicion: number;
+  costeFaseCebo: number;
+  costePiensoTotal: number;
+  costeSanidadTotal: number;
+  costeFijosTotal: number;
+  mortalidadCoste: number;
+};
 
 type EscenarioResult = {
   nombre: string;
   escenario: string;
   pesoVenta: number;
   precioKg: number;
+  precioFuente: string;
   ingresosPorAnimal: number;
   ingresosTotales: number;
-  costePienso: number;
-  costeSanidad: number;
-  costeFijosPorAnimal: number;
+  desgloseCostes: DesgloseCostes;
   costeTotalPorAnimal: number;
   costesTotales: number;
   mortalidadPct: number;
@@ -20,104 +34,333 @@ type EscenarioResult = {
   margenTotal: number;
   diasOcupacion: number;
   margenPorPlazaDia: number;
+  rentabilidadPct: number;
   viable: boolean;
   razonNoViable?: string;
+  usaCostesEstimados: boolean;
 };
 
-function calcularEscenario(
+type Recomendacion = {
+  escenarioRecomendado: string;
+  razon: string;
+  factores: string[];
+  confianza: number;
+  alternativa?: string;
+  razonAlternativa?: string;
+};
+
+// ============================================================
+// COSTES ESTÁNDAR ESTIMADOS DEL SECTOR
+// ============================================================
+
+const COSTES_ESTANDAR = {
+  // Fase Cría (0-7kg): ~28 días
+  cria: {
+    piensoMadre: 2.80,       // €/lechón (parte proporcional pienso madre)
+    piensoLechon: 1.20,      // €/lechón (pre-starter)
+    sanidad: 1.50,            // €/lechón (vacunas iniciales)
+    manoObra: 2.00,           // €/lechón (parte proporcional)
+    energia: 1.00,            // €/lechón (calefacción nido)
+    otros: 0.50,              // €/lechón (limpieza, desinfección)
+    total: 9.00,              // €/lechón total fase cría
+    mortalidad: 8.0,          // % mortalidad en fase
+    dias: 28,
+  },
+  // Fase Transición (7-21kg): ~37 días
+  transicion: {
+    pienso: 12.50,            // €/lechón (starter + transición)
+    sanidad: 2.50,            // €/lechón (refuerzos vacunales)
+    manoObra: 1.80,           // €/lechón
+    energia: 0.80,            // €/lechón
+    otros: 0.40,              // €/lechón
+    total: 18.00,             // €/lechón total fase transición
+    mortalidad: 3.0,          // % mortalidad en fase
+    dias: 37,
+  },
+  // Fase Cebo (21-110kg): ~120 días
+  cebo: {
+    pienso: 78.00,            // €/cerdo (crecimiento + acabado, IC ~2.8)
+    sanidad: 4.50,            // €/cerdo (preventivos)
+    manoObra: 5.00,           // €/cerdo
+    energia: 2.50,            // €/cerdo
+    amortizacion: 3.00,       // €/cerdo (plaza cebadero)
+    purines: 2.00,            // €/cerdo (gestión)
+    otros: 1.00,              // €/cerdo
+    total: 96.00,             // €/cerdo total fase cebo
+    mortalidad: 2.0,          // % mortalidad en fase
+    dias: 120,
+  },
+};
+
+// ============================================================
+// FUNCIONES DE CÁLCULO
+// ============================================================
+
+function calcularEscenarioMejorado(
   escenario: string,
   numAnimales: number,
-  params: any,
+  params: any | null,
   plazasDisponibles: number,
+  preciosMercado: { cebado?: number; lechon20?: number; lechon7?: number },
+  usarCostesEstimados: boolean,
 ): EscenarioResult {
-  let pesoVenta: number, precioKg: number, costePienso: number, costeSanidad: number;
+  let pesoVenta: number, precioKg: number, precioFuente: string;
+  let costeFaseCria: number, costeFaseTransicion: number, costeFaseCebo: number;
+  let costePiensoTotal: number, costeSanidadTotal: number, costeFijosTotal: number;
   let mortalidadPct: number, diasOcupacion: number, nombre: string;
 
   switch (escenario) {
-    case "5-7kg":
+    case "5-7kg": {
       nombre = "Venta Lechón 5-7 kg";
-      pesoVenta = 6;
-      precioKg = parseFloat(params.precioVenta5_7);
-      costePienso = parseFloat(params.costePienso5_7);
-      costeSanidad = parseFloat(params.costeSanidad5_7);
-      mortalidadPct = parseFloat(params.mortalidad5_7);
-      diasOcupacion = params.diasEstancia5_7;
+      pesoVenta = 7;
+      diasOcupacion = usarCostesEstimados ? COSTES_ESTANDAR.cria.dias : (params?.diasEstancia5_7 || 28);
+
+      // Precio: mercado > parámetros > estándar
+      if (preciosMercado.lechon7) {
+        precioKg = preciosMercado.lechon7;
+        precioFuente = "Mercado (estimado ref. Mercolleida)";
+      } else if (params?.precioVenta5_7) {
+        precioKg = parseFloat(params.precioVenta5_7);
+        precioFuente = "Parámetros manuales";
+      } else {
+        precioKg = 3.50;
+        precioFuente = "Estándar del sector";
+      }
+
+      if (usarCostesEstimados) {
+        costeFaseCria = COSTES_ESTANDAR.cria.total;
+        costeFaseTransicion = 0;
+        costeFaseCebo = 0;
+        costePiensoTotal = COSTES_ESTANDAR.cria.piensoMadre + COSTES_ESTANDAR.cria.piensoLechon;
+        costeSanidadTotal = COSTES_ESTANDAR.cria.sanidad;
+        costeFijosTotal = COSTES_ESTANDAR.cria.manoObra + COSTES_ESTANDAR.cria.energia + COSTES_ESTANDAR.cria.otros;
+        mortalidadPct = COSTES_ESTANDAR.cria.mortalidad;
+      } else {
+        costePiensoTotal = parseFloat(params?.costePienso5_7 || "8.50");
+        costeSanidadTotal = parseFloat(params?.costeSanidad5_7 || "1.50");
+        const costesFijosMes = parseFloat(params?.costeManoObra || "3500") + parseFloat(params?.costeEnergia || "1200") + parseFloat(params?.costeAmortizacion || "800") + parseFloat(params?.costePurines || "400");
+        costeFijosTotal = numAnimales > 0 ? (costesFijosMes / 30 / numAnimales) * diasOcupacion : 0;
+        costeFaseCria = costePiensoTotal + costeSanidadTotal + costeFijosTotal;
+        costeFaseTransicion = 0;
+        costeFaseCebo = 0;
+        mortalidadPct = parseFloat(params?.mortalidad5_7 || "8.00");
+      }
       break;
-    case "20-21kg":
+    }
+    case "20-21kg": {
       nombre = "Venta Transición 20-21 kg";
-      pesoVenta = 20.5;
-      precioKg = parseFloat(params.precioVenta20_21);
-      costePienso = parseFloat(params.costePienso20_21);
-      costeSanidad = parseFloat(params.costeSanidad20_21);
-      mortalidadPct = parseFloat(params.mortalidad20_21);
-      diasOcupacion = params.diasEstancia20_21;
+      pesoVenta = 21;
+      diasOcupacion = usarCostesEstimados
+        ? COSTES_ESTANDAR.cria.dias + COSTES_ESTANDAR.transicion.dias
+        : (params?.diasEstancia20_21 || 65);
+
+      if (preciosMercado.lechon20) {
+        // Precio lechón 20kg se da por unidad, convertir a €/kg
+        precioKg = preciosMercado.lechon20 / 20;
+        precioFuente = "Mercado (Mercolleida)";
+      } else if (params?.precioVenta20_21) {
+        precioKg = parseFloat(params.precioVenta20_21);
+        precioFuente = "Parámetros manuales";
+      } else {
+        precioKg = 2.80;
+        precioFuente = "Estándar del sector";
+      }
+
+      if (usarCostesEstimados) {
+        costeFaseCria = COSTES_ESTANDAR.cria.total;
+        costeFaseTransicion = COSTES_ESTANDAR.transicion.total;
+        costeFaseCebo = 0;
+        costePiensoTotal = COSTES_ESTANDAR.cria.piensoMadre + COSTES_ESTANDAR.cria.piensoLechon + COSTES_ESTANDAR.transicion.pienso;
+        costeSanidadTotal = COSTES_ESTANDAR.cria.sanidad + COSTES_ESTANDAR.transicion.sanidad;
+        costeFijosTotal = COSTES_ESTANDAR.cria.manoObra + COSTES_ESTANDAR.cria.energia + COSTES_ESTANDAR.cria.otros + COSTES_ESTANDAR.transicion.manoObra + COSTES_ESTANDAR.transicion.energia + COSTES_ESTANDAR.transicion.otros;
+        // Mortalidad acumulada: 1 - (1 - cria) * (1 - transicion)
+        mortalidadPct = (1 - (1 - COSTES_ESTANDAR.cria.mortalidad / 100) * (1 - COSTES_ESTANDAR.transicion.mortalidad / 100)) * 100;
+      } else {
+        costePiensoTotal = parseFloat(params?.costePienso20_21 || "22.00");
+        costeSanidadTotal = parseFloat(params?.costeSanidad20_21 || "3.00");
+        const costesFijosMes = parseFloat(params?.costeManoObra || "3500") + parseFloat(params?.costeEnergia || "1200") + parseFloat(params?.costeAmortizacion || "800") + parseFloat(params?.costePurines || "400");
+        costeFijosTotal = numAnimales > 0 ? (costesFijosMes / 30 / numAnimales) * diasOcupacion : 0;
+        costeFaseCria = costePiensoTotal * 0.35 + costeSanidadTotal * 0.4 + costeFijosTotal * 0.4;
+        costeFaseTransicion = costePiensoTotal * 0.65 + costeSanidadTotal * 0.6 + costeFijosTotal * 0.6;
+        costeFaseCebo = 0;
+        mortalidadPct = parseFloat(params?.mortalidad20_21 || "3.00");
+      }
       break;
-    case "cebo":
+    }
+    case "cebo": {
       nombre = "Cebo Final 100-110 kg";
-      pesoVenta = 105;
-      precioKg = parseFloat(params.precioVentaCebo);
-      costePienso = parseFloat(params.costePiensoCebo);
-      costeSanidad = parseFloat(params.costeSanidadCebo);
-      mortalidadPct = parseFloat(params.mortalidadCebo);
-      diasOcupacion = params.diasEstanciaCebo;
+      pesoVenta = 110;
+      diasOcupacion = usarCostesEstimados
+        ? COSTES_ESTANDAR.cria.dias + COSTES_ESTANDAR.transicion.dias + COSTES_ESTANDAR.cebo.dias
+        : (params?.diasEstanciaCebo || 160);
+
+      if (preciosMercado.cebado) {
+        precioKg = preciosMercado.cebado;
+        precioFuente = "Mercado (Mercolleida)";
+      } else if (params?.precioVentaCebo) {
+        precioKg = parseFloat(params.precioVentaCebo);
+        precioFuente = "Parámetros manuales";
+      } else {
+        precioKg = 1.45;
+        precioFuente = "Estándar del sector";
+      }
+
+      if (usarCostesEstimados) {
+        costeFaseCria = COSTES_ESTANDAR.cria.total;
+        costeFaseTransicion = COSTES_ESTANDAR.transicion.total;
+        costeFaseCebo = COSTES_ESTANDAR.cebo.total;
+        costePiensoTotal = COSTES_ESTANDAR.cria.piensoMadre + COSTES_ESTANDAR.cria.piensoLechon + COSTES_ESTANDAR.transicion.pienso + COSTES_ESTANDAR.cebo.pienso;
+        costeSanidadTotal = COSTES_ESTANDAR.cria.sanidad + COSTES_ESTANDAR.transicion.sanidad + COSTES_ESTANDAR.cebo.sanidad;
+        costeFijosTotal = COSTES_ESTANDAR.cria.manoObra + COSTES_ESTANDAR.cria.energia + COSTES_ESTANDAR.cria.otros + COSTES_ESTANDAR.transicion.manoObra + COSTES_ESTANDAR.transicion.energia + COSTES_ESTANDAR.transicion.otros + COSTES_ESTANDAR.cebo.manoObra + COSTES_ESTANDAR.cebo.energia + COSTES_ESTANDAR.cebo.amortizacion + COSTES_ESTANDAR.cebo.purines + COSTES_ESTANDAR.cebo.otros;
+        // Mortalidad acumulada total
+        mortalidadPct = (1 - (1 - COSTES_ESTANDAR.cria.mortalidad / 100) * (1 - COSTES_ESTANDAR.transicion.mortalidad / 100) * (1 - COSTES_ESTANDAR.cebo.mortalidad / 100)) * 100;
+      } else {
+        costePiensoTotal = parseFloat(params?.costePiensoCebo || "95.00");
+        costeSanidadTotal = parseFloat(params?.costeSanidadCebo || "5.50");
+        const costesFijosMes = parseFloat(params?.costeManoObra || "3500") + parseFloat(params?.costeEnergia || "1200") + parseFloat(params?.costeAmortizacion || "800") + parseFloat(params?.costePurines || "400");
+        costeFijosTotal = numAnimales > 0 ? (costesFijosMes / 30 / numAnimales) * diasOcupacion : 0;
+        costeFaseCria = costePiensoTotal * 0.1 + costeSanidadTotal * 0.2 + costeFijosTotal * 0.15;
+        costeFaseTransicion = costePiensoTotal * 0.2 + costeSanidadTotal * 0.3 + costeFijosTotal * 0.2;
+        costeFaseCebo = costePiensoTotal * 0.7 + costeSanidadTotal * 0.5 + costeFijosTotal * 0.65;
+        mortalidadPct = parseFloat(params?.mortalidadCebo || "2.00");
+      }
       break;
+    }
     default:
       throw new Error("Escenario no válido");
   }
 
-  const costesFijosMensuales =
-    parseFloat(params.costeManoObra) +
-    parseFloat(params.costeEnergia) +
-    parseFloat(params.costeAmortizacion) +
-    parseFloat(params.costePurines);
-
-  const costeFijosPorAnimalDia = numAnimales > 0 ? costesFijosMensuales / 30 / numAnimales : 0;
-  const costeFijosPorAnimal = costeFijosPorAnimalDia * diasOcupacion;
+  const costeTotalPorAnimal = usarCostesEstimados
+    ? costeFaseCria + costeFaseTransicion + costeFaseCebo
+    : costePiensoTotal + costeSanidadTotal + costeFijosTotal;
 
   const animalesFinales = Math.round(numAnimales * (1 - mortalidadPct / 100));
+  const mortalidadCoste = costeTotalPorAnimal * (mortalidadPct / 100);
   const ingresosPorAnimal = pesoVenta * precioKg;
   const ingresosTotales = ingresosPorAnimal * animalesFinales;
-  const costeTotalPorAnimal = costePienso + costeSanidad + costeFijosPorAnimal;
-  const costesTotales = costeTotalPorAnimal * numAnimales;
-  const margenPorAnimal = ingresosPorAnimal - costeTotalPorAnimal;
-  const margenTotal = ingresosTotales - costesTotales;
+  const costesTotalesConMortalidad = (costeTotalPorAnimal + mortalidadCoste) * numAnimales;
+  const margenPorAnimal = ingresosPorAnimal - costeTotalPorAnimal - mortalidadCoste;
+  const margenTotal = ingresosTotales - costesTotalesConMortalidad;
   const margenPorPlazaDia = diasOcupacion > 0 ? margenPorAnimal / diasOcupacion : 0;
+  const rentabilidadPct = costeTotalPorAnimal > 0 ? (margenPorAnimal / costeTotalPorAnimal) * 100 : 0;
 
-  // Viabilidad: si necesita plazas de cebo y no hay suficientes
   let viable = true;
   let razonNoViable: string | undefined;
-  if (escenario === "cebo" && numAnimales > plazasDisponibles) {
+  if (escenario === "cebo" && numAnimales > plazasDisponibles && plazasDisponibles > 0) {
     viable = false;
     razonNoViable = `Se necesitan ${numAnimales} plazas de cebo pero solo hay ${plazasDisponibles} disponibles`;
   }
+
+  const r = (v: number) => Math.round(v * 100) / 100;
 
   return {
     nombre,
     escenario,
     pesoVenta,
-    precioKg,
-    ingresosPorAnimal: Math.round(ingresosPorAnimal * 100) / 100,
-    ingresosTotales: Math.round(ingresosTotales * 100) / 100,
-    costePienso,
-    costeSanidad,
-    costeFijosPorAnimal: Math.round(costeFijosPorAnimal * 100) / 100,
-    costeTotalPorAnimal: Math.round(costeTotalPorAnimal * 100) / 100,
-    costesTotales: Math.round(costesTotales * 100) / 100,
-    mortalidadPct,
+    precioKg: r(precioKg),
+    precioFuente,
+    ingresosPorAnimal: r(ingresosPorAnimal),
+    ingresosTotales: r(ingresosTotales),
+    desgloseCostes: {
+      costeFaseCria: r(costeFaseCria),
+      costeFaseTransicion: r(costeFaseTransicion),
+      costeFaseCebo: r(costeFaseCebo),
+      costePiensoTotal: r(costePiensoTotal),
+      costeSanidadTotal: r(costeSanidadTotal),
+      costeFijosTotal: r(costeFijosTotal),
+      mortalidadCoste: r(mortalidadCoste),
+    },
+    costeTotalPorAnimal: r(costeTotalPorAnimal + mortalidadCoste),
+    costesTotales: r(costesTotalesConMortalidad),
+    mortalidadPct: r(mortalidadPct),
     animalesFinales,
-    margenPorAnimal: Math.round(margenPorAnimal * 100) / 100,
-    margenTotal: Math.round(margenTotal * 100) / 100,
+    margenPorAnimal: r(margenPorAnimal),
+    margenTotal: r(margenTotal),
     diasOcupacion,
-    margenPorPlazaDia: Math.round(margenPorPlazaDia * 100) / 100,
+    margenPorPlazaDia: r(margenPorPlazaDia),
+    rentabilidadPct: r(rentabilidadPct),
     viable,
     razonNoViable,
+    usaCostesEstimados: usarCostesEstimados,
   };
 }
+
+function generarRecomendacion(escenarios: EscenarioResult[], plazasCebo: number): Recomendacion {
+  const viables = escenarios.filter(e => e.viable);
+
+  if (viables.length === 0) {
+    return {
+      escenarioRecomendado: "ninguno",
+      razon: "Ningún escenario es viable con la capacidad actual. Considere ampliar plazas de cebo o reducir el tamaño del lote.",
+      factores: ["Capacidad insuficiente en todos los escenarios"],
+      confianza: 0,
+    };
+  }
+
+  // Ordenar por margen por plaza-día (eficiencia)
+  const porEficiencia = [...viables].sort((a, b) => b.margenPorPlazaDia - a.margenPorPlazaDia);
+  // Ordenar por margen total (beneficio absoluto)
+  const porMargenTotal = [...viables].sort((a, b) => b.margenTotal - a.margenTotal);
+  // Ordenar por rentabilidad %
+  const porRentabilidad = [...viables].sort((a, b) => b.rentabilidadPct - a.rentabilidadPct);
+
+  const mejor = porEficiencia[0];
+  const factores: string[] = [];
+  let confianza = 0.7;
+
+  // Factor 1: Margen por plaza-día
+  factores.push(`Mejor margen por plaza-día: ${mejor.margenPorPlazaDia.toFixed(2)} €/plaza/día`);
+
+  // Factor 2: Margen total
+  if (porMargenTotal[0].escenario === mejor.escenario) {
+    factores.push(`También ofrece el mayor margen total: ${mejor.margenTotal.toFixed(2)} €`);
+    confianza += 0.1;
+  } else {
+    factores.push(`Margen total: ${mejor.margenTotal.toFixed(2)} € (vs ${porMargenTotal[0].margenTotal.toFixed(2)} € del escenario "${porMargenTotal[0].nombre}")`);
+  }
+
+  // Factor 3: Rentabilidad
+  factores.push(`Rentabilidad sobre costes: ${mejor.rentabilidadPct.toFixed(1)}%`);
+
+  // Factor 4: Días de ocupación
+  factores.push(`Días de ocupación: ${mejor.diasOcupacion} días (liberación de plazas más ${mejor.diasOcupacion < 100 ? "rápida" : "lenta"})`);
+
+  // Factor 5: Capacidad
+  if (mejor.escenario === "cebo") {
+    factores.push(`Utiliza ${mejor.animalesFinales} de ${plazasCebo} plazas de cebo disponibles`);
+  }
+
+  // Factor 6: Precio de mercado
+  factores.push(`Precio de venta: ${mejor.precioKg.toFixed(2)} €/kg (${mejor.precioFuente})`);
+
+  // Alternativa
+  let alternativa: string | undefined;
+  let razonAlternativa: string | undefined;
+  if (viables.length > 1) {
+    const segundo = porEficiencia[1];
+    alternativa = segundo.escenario;
+    razonAlternativa = `"${segundo.nombre}" como alternativa con margen de ${segundo.margenPorPlazaDia.toFixed(2)} €/plaza/día`;
+  }
+
+  return {
+    escenarioRecomendado: mejor.escenario,
+    razon: `Se recomienda "${mejor.nombre}" por ofrecer el mejor equilibrio entre rentabilidad (${mejor.rentabilidadPct.toFixed(1)}%), margen por plaza-día (${mejor.margenPorPlazaDia.toFixed(2)} €) y margen total (${mejor.margenTotal.toFixed(2)} €).`,
+    factores,
+    confianza: Math.min(confianza, 0.95),
+    alternativa,
+    razonAlternativa,
+  };
+}
+
+// ============================================================
+// ROUTER
+// ============================================================
 
 export const calculadoraRouter = router({
   parametros: router({
     getActivos: protectedProcedure.query(async () => {
-      return getParametrosActivos();
+      const params = await getParametrosActivos();
+      return params ?? null;
     }),
 
     getAll: protectedProcedure.query(async () => {
@@ -201,69 +444,83 @@ export const calculadoraRouter = router({
       }),
   }),
 
+  costesEstandar: protectedProcedure.query(() => {
+    return COSTES_ESTANDAR;
+  }),
+
   calcular: protectedProcedure
     .input(z.object({
       numAnimales: z.number().min(1),
+      usarCostesEstimados: z.boolean().default(true),
       // Optional overrides for quick calculations
       precioVenta5_7: z.string().optional(),
       precioVenta20_21: z.string().optional(),
       precioVentaCebo: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      let params = await getParametrosActivos();
-      if (!params) {
-        // Use defaults
-        params = {
-          precioVenta5_7: "3.50", precioVenta20_21: "2.80", precioVentaCebo: "1.45",
-          costePienso5_7: "8.50", costePienso20_21: "22.00", costePiensoCebo: "95.00",
-          costeSanidad5_7: "1.50", costeSanidad20_21: "3.00", costeSanidadCebo: "5.50",
-          mortalidad5_7: "8.00", mortalidad20_21: "3.00", mortalidadCebo: "2.00",
-          costeManoObra: "3500.00", costeEnergia: "1200.00", costeAmortizacion: "800.00", costePurines: "400.00",
-          indicConversion5_7: "1.80", indicConversion20_21: "2.20", indicConversionCebo: "2.80",
-          diasEstancia5_7: 28, diasEstancia20_21: 65, diasEstanciaCebo: 160,
-        } as any;
+      const params = await getParametrosActivos();
+
+      // Obtener precios de mercado actuales
+      let preciosMercado: { cebado?: number; lechon20?: number; lechon7?: number } = {};
+      try {
+        const precios = await obtenerPreciosActuales();
+        for (const p of precios) {
+          if (p.producto.includes("Cebado")) preciosMercado.cebado = p.precio;
+          if (p.producto.includes("Lechón 20")) preciosMercado.lechon20 = p.precio;
+          if (p.producto.includes("Lechón 5-7")) preciosMercado.lechon7 = p.precio;
+        }
+      } catch {
+        // Si falla, se usarán parámetros manuales o estándar
       }
 
-      // Apply overrides
-      if (input.precioVenta5_7) params = { ...params, precioVenta5_7: input.precioVenta5_7 } as any;
-      if (input.precioVenta20_21) params = { ...params, precioVenta20_21: input.precioVenta20_21 } as any;
-      if (input.precioVentaCebo) params = { ...params, precioVentaCebo: input.precioVentaCebo } as any;
+      // Aplicar overrides del usuario
+      if (input.precioVenta5_7) preciosMercado.lechon7 = parseFloat(input.precioVenta5_7);
+      if (input.precioVenta20_21) preciosMercado.lechon20 = parseFloat(input.precioVenta20_21) * 20;
+      if (input.precioVentaCebo) preciosMercado.cebado = parseFloat(input.precioVentaCebo);
 
       // Get available cebo capacity
       const allCentros = await getCentros();
       const cebaderos = allCentros.filter(c => c.tipo === "engorde");
       const plazasCeboDisponibles = cebaderos.reduce((sum, c) => sum + (c.plazasTotales - c.plazasOcupadas), 0);
 
+      const usarEstimados = input.usarCostesEstimados || !params;
+
       const escenarios = [
-        calcularEscenario("5-7kg", input.numAnimales, params, plazasCeboDisponibles),
-        calcularEscenario("20-21kg", input.numAnimales, params, plazasCeboDisponibles),
-        calcularEscenario("cebo", input.numAnimales, params, plazasCeboDisponibles),
+        calcularEscenarioMejorado("5-7kg", input.numAnimales, params, plazasCeboDisponibles, preciosMercado, usarEstimados),
+        calcularEscenarioMejorado("20-21kg", input.numAnimales, params, plazasCeboDisponibles, preciosMercado, usarEstimados),
+        calcularEscenarioMejorado("cebo", input.numAnimales, params, plazasCeboDisponibles, preciosMercado, usarEstimados),
       ];
 
-      // Determine recommendation
-      const viables = escenarios.filter(e => e.viable);
-      let recomendado: string | null = null;
-      let razonRecomendacion = "";
+      // Generar recomendación detallada
+      const recomendacion = generarRecomendacion(escenarios, plazasCeboDisponibles);
 
-      if (viables.length > 0) {
-        // Best by margin per plaza-day (efficiency)
-        const best = viables.reduce((a, b) => a.margenPorPlazaDia > b.margenPorPlazaDia ? a : b);
-        recomendado = best.escenario;
-        razonRecomendacion = `"${best.nombre}" ofrece el mejor margen por plaza-día (${best.margenPorPlazaDia.toFixed(2)} €/plaza/día) con un margen total de ${best.margenTotal.toFixed(2)} €`;
+      // Estimaciones de precio futuro
+      let estimaciones: Record<string, { precio: number; confianza: number; metodo: string }> = {};
+      try {
+        estimaciones = {
+          cebado_4sem: estimarPrecioFuturo("cerdo_cebado", 4),
+          cebado_8sem: estimarPrecioFuturo("cerdo_cebado", 8),
+          cebado_16sem: estimarPrecioFuturo("cerdo_cebado", 16),
+          lechon_4sem: estimarPrecioFuturo("lechon_20kg", 4),
+        };
+      } catch {
+        // Silently skip if estimation fails
       }
 
       await logActividad({
         tipo: "calculo_realizado",
-        descripcion: `Cálculo de escenarios para ${input.numAnimales} animales. Recomendado: ${recomendado || "ninguno"}`,
+        descripcion: `Cálculo de escenarios para ${input.numAnimales} animales (costes ${usarEstimados ? "estimados" : "manuales"}). Recomendado: ${recomendacion.escenarioRecomendado}`,
         modulo: "calculadora",
         userId: ctx.user.id,
       });
 
       return {
         escenarios,
-        recomendado,
-        razonRecomendacion,
+        recomendacion,
         plazasCeboDisponibles,
+        estimaciones,
+        usaCostesEstimados: usarEstimados,
+        costesEstandar: usarEstimados ? COSTES_ESTANDAR : null,
       };
     }),
 });

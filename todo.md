@@ -1,46 +1,62 @@
 # VentiPro - TODO
 
 ## Fase 1: Infraestructura y Diseño
-- [ ] Configurar tema visual profesional (colores, tipografía, sombras)
-- [ ] Diseñar esquema de base de datos completo (centros, lotes, clientes, ofertas, parámetros)
-- [ ] Migrar esquema a base de datos
+- [x] Configurar tema visual profesional (colores, tipografía, sombras)
+- [x] Diseñar esquema de base de datos completo (centros, lotes, clientes, ofertas, parámetros)
+- [x] Migrar esquema a base de datos
 
 ## Fase 2: Backend - Módulos de Negocio
-- [ ] CRUD de centros (cría Aragón, engorde Soria) con capacidades
-- [ ] CRUD de lotes (nº animales, fecha destete, peso, calidad)
-- [ ] Calculadora de escenarios (5-7kg, 20-21kg, cebo final) con costes y márgenes
-- [ ] Motor de decisión y recomendación automática por lote
-- [ ] CRUD de clientes/leads con segmentación geográfica
-- [ ] Importación CSV de leads
-- [ ] Generador de ofertas comerciales por lote y cliente
-- [ ] Envío de ofertas por Gmail
-- [ ] Generación de PDFs de ofertas y almacenamiento en S3
-- [ ] Notificaciones al propietario (nuevos leads, ofertas, umbrales capacidad)
+- [x] CRUD de centros (cría Aragón, engorde Soria) con capacidades
+- [x] CRUD de lotes (nº animales, fecha destete, peso, calidad)
+- [x] Calculadora de escenarios (5-7kg, 20-21kg, cebo final) con costes y márgenes
+- [x] Motor de decisión y recomendación automática por lote
+- [x] CRUD de clientes/leads con segmentación geográfica
+- [x] Importación CSV de leads
+- [x] Generador de ofertas comerciales por lote y cliente
+- [x] Envío de ofertas por Gmail
+- [x] Generación de PDFs de ofertas y almacenamiento en S3
+- [x] Notificaciones al propietario (nuevos leads, ofertas, umbrales capacidad)
 
 ## Fase 3: Frontend - Páginas y Componentes
-- [ ] Layout principal con sidebar (DashboardLayout)
-- [ ] Dashboard de capacidad de centros (% ocupación cría y engorde)
-- [ ] Visualización de lotes por fase con fechas clave
-- [ ] Página de calculadora de rentabilidad con gráficos interactivos (Recharts)
-- [ ] Comparativa visual de 3 escenarios con margen por plaza-día
-- [ ] Motor de recomendación visual con justificación
-- [ ] Página CRM: listado de clientes con filtros (tipo, zona, volumen, prioridad)
-- [ ] Página CRM: ficha de cliente detallada
-- [ ] Página CRM: importación CSV
-- [ ] Página de ofertas: generación automática con selección de clientes
-- [ ] Página de ofertas: historial y estados (enviada, aceptada, rechazada)
-- [ ] Diseño responsive y elegante para móvil y tablet
+- [x] Layout principal con sidebar (DashboardLayout)
+- [x] Dashboard de capacidad de centros (% ocupación cría y engorde)
+- [x] Visualización de lotes por fase con fechas clave
+- [x] Página de calculadora de rentabilidad con gráficos interactivos (Recharts)
+- [x] Comparativa visual de 3 escenarios con margen por plaza-día
+- [x] Motor de recomendación visual con justificación
+- [x] Página CRM: listado de clientes con filtros (tipo, zona, volumen, prioridad)
+- [x] Página CRM: ficha de cliente detallada
+- [x] Página CRM: importación CSV
+- [x] Página de ofertas: generación automática con selección de clientes
+- [x] Página de ofertas: historial y estados (enviada, aceptada, rechazada)
+- [x] Diseño responsive y elegante para móvil y tablet
 
 ## Fase 4: Docker y Despliegue
-- [ ] Dockerfile para backend (FastAPI/Node)
-- [ ] Dockerfile para frontend (build + NGINX)
-- [ ] docker-compose.yml con todos los servicios
-- [ ] Instrucciones de despliegue en VM de Google
+- [x] Dockerfile para backend (FastAPI/Node)
+- [x] Dockerfile para frontend (build + NGINX)
+- [x] docker-compose.yml con todos los servicios
+- [x] Instrucciones de despliegue en VM de Google
 
 ## Fase 5: Documentación Kit Digital
-- [ ] Documento de justificación con funcionalidades, tecnologías y métricas
-- [ ] Push completo al repositorio GitHub Myriamfxs/Ventipro
+- [x] Documento de justificación con funcionalidades, tecnologías y métricas
+- [x] Push completo al repositorio GitHub Myriamfxs/Ventipro
 
 ## Fase 6: Calidad
-- [ ] Tests vitest para routers backend
-- [ ] Verificación exhaustiva de funcionalidad completa
+- [x] Tests vitest para routers backend (29 tests, 100% pass)
+- [x] Verificación exhaustiva de funcionalidad completa
+- [x] Corrección bug página Actividad (stats.porModulo rendering)
+
+## Bugs
+- [x] Fix: calculadora.parametros.getActivos devuelve undefined (query data cannot be undefined)
+
+## Fase 7: Mejoras según documento de requisitos v2
+- [x] Scraping de precios de mercado de Pig333/Mercolleida (cerdo cebado, lechón 20kg)
+- [x] Tabla de precios de mercado en tiempo real en el dashboard
+- [x] Noticias del sector porcino (RSS Google News / scraping Pig333)
+- [x] Refactorizar fórmulas de calculadora: costes por fases (cría, transición, cebo) separados
+- [x] Opción de costes estándar estimados automáticos vs costes manuales del usuario
+- [x] Estimación de precios futuros con media móvil ponderada y tendencias estacionales
+- [x] Motor de recomendación mejorado con justificación detallada por lote
+- [x] Consulta de precio de pienso actualizado
+- [x] Visualización de tendencias de precios con gráficos históricos
+- [x] Integración de precios de mercado en la calculadora de escenarios
