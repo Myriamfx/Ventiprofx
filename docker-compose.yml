@@ -1,0 +1,52 @@
+# ============================================================
+# VentiPro - Docker Compose para Despliegue en VM de Google
+# ============================================================
+# Uso: docker-compose up -d
+# ============================================================
+
+version: "3.8"
+
+services:
+  # ─── Aplicación VentiPro ───────────────────────────────────
+  ventipro-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ventipro-app
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    networks:
+      - ventipro-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ─── NGINX Proxy Inverso ───────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: ventipro-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      ventipro-app:
+        condition: service_healthy
+    networks:
+      - ventipro-network
+
+networks:
+  ventipro-network:
+    driver: bridge

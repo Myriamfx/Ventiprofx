@@ -1,0 +1,13 @@
+node_modules
+dist
+client/dist
+.manus-logs
+.env
+.env.local
+.env.production
+*.log
+.git
+.gitignore
+README.md
+dev-notes.md
+todo.md
