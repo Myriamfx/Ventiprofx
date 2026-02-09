@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { getParametrosActivos, getAllParametros, createParametros, updateParametros, getCentros, logActividad } from "../db";
+import { getParametrosActivos, getAllParametros, createParametros, updateParametros, getCentros, logActividad, createHistorialCalculo } from "../db";
 import { obtenerPreciosActuales, estimarPrecioFuturo } from "../services/preciosMercado";
 
 // ============================================================
@@ -513,6 +513,52 @@ export const calculadoraRouter = router({
         modulo: "calculadora",
         userId: ctx.user.id,
       });
+
+      // Guardar automáticamente en historial
+      try {
+        const e57 = escenarios.find(e => e.escenario === "5-7kg");
+        const e2021 = escenarios.find(e => e.escenario === "20-21kg");
+        const eCebo = escenarios.find(e => e.escenario === "cebo");
+        await createHistorialCalculo({
+          userId: ctx.user.id,
+          numAnimales: input.numAnimales,
+          usaCostesEstimados: usarEstimados ? 1 : 0,
+          e57_precioKg: e57?.precioKg?.toString() || null,
+          e57_ingresosPorAnimal: e57?.ingresosPorAnimal?.toString() || null,
+          e57_costeTotalPorAnimal: e57?.costeTotalPorAnimal?.toString() || null,
+          e57_margenPorAnimal: e57?.margenPorAnimal?.toString() || null,
+          e57_margenTotal: e57?.margenTotal?.toString() || null,
+          e57_margenPorPlazaDia: e57?.margenPorPlazaDia?.toString() || null,
+          e57_rentabilidadPct: e57?.rentabilidadPct?.toString() || null,
+          e57_mortalidadPct: e57?.mortalidadPct?.toString() || null,
+          e57_viable: e57?.viable ? 1 : 0,
+          e2021_precioKg: e2021?.precioKg?.toString() || null,
+          e2021_ingresosPorAnimal: e2021?.ingresosPorAnimal?.toString() || null,
+          e2021_costeTotalPorAnimal: e2021?.costeTotalPorAnimal?.toString() || null,
+          e2021_margenPorAnimal: e2021?.margenPorAnimal?.toString() || null,
+          e2021_margenTotal: e2021?.margenTotal?.toString() || null,
+          e2021_margenPorPlazaDia: e2021?.margenPorPlazaDia?.toString() || null,
+          e2021_rentabilidadPct: e2021?.rentabilidadPct?.toString() || null,
+          e2021_mortalidadPct: e2021?.mortalidadPct?.toString() || null,
+          e2021_viable: e2021?.viable ? 1 : 0,
+          eCebo_precioKg: eCebo?.precioKg?.toString() || null,
+          eCebo_ingresosPorAnimal: eCebo?.ingresosPorAnimal?.toString() || null,
+          eCebo_costeTotalPorAnimal: eCebo?.costeTotalPorAnimal?.toString() || null,
+          eCebo_margenPorAnimal: eCebo?.margenPorAnimal?.toString() || null,
+          eCebo_margenTotal: eCebo?.margenTotal?.toString() || null,
+          eCebo_margenPorPlazaDia: eCebo?.margenPorPlazaDia?.toString() || null,
+          eCebo_rentabilidadPct: eCebo?.rentabilidadPct?.toString() || null,
+          eCebo_mortalidadPct: eCebo?.mortalidadPct?.toString() || null,
+          eCebo_viable: eCebo?.viable ? 1 : 0,
+          escenarioRecomendado: recomendacion.escenarioRecomendado,
+          confianzaRecomendacion: recomendacion.confianza?.toString() || null,
+          precioMercadoCebado: preciosMercado.cebado?.toString() || null,
+          precioMercadoLechon20: preciosMercado.lechon20?.toString() || null,
+          precioMercadoLechon7: preciosMercado.lechon7?.toString() || null,
+        } as any);
+      } catch (err) {
+        console.warn("[Historial] Error guardando cálculo:", err);
+      }
 
       return {
         escenarios,

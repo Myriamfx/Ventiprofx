@@ -178,3 +178,59 @@ export const actividadLog = mysqlTable("actividad_log", {
 
 export type ActividadLog = typeof actividadLog.$inferSelect;
 export type InsertActividadLog = typeof actividadLog.$inferInsert;
+
+// ============================================================
+// HISTORIAL DE CÁLCULOS DE RENTABILIDAD
+// ============================================================
+export const historialCalculos = mysqlTable("historial_calculos", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  loteId: int("loteId"),
+  codigoLote: varchar("codigoLote", { length: 50 }),
+  numAnimales: int("numAnimales").notNull(),
+  usaCostesEstimados: int("usaCostesEstimados").notNull().default(1),
+  // Escenario 5-7kg
+  e57_precioKg: decimal("e57_precioKg", { precision: 8, scale: 4 }),
+  e57_ingresosPorAnimal: decimal("e57_ingresosPorAnimal", { precision: 10, scale: 2 }),
+  e57_costeTotalPorAnimal: decimal("e57_costeTotalPorAnimal", { precision: 10, scale: 2 }),
+  e57_margenPorAnimal: decimal("e57_margenPorAnimal", { precision: 10, scale: 2 }),
+  e57_margenTotal: decimal("e57_margenTotal", { precision: 12, scale: 2 }),
+  e57_margenPorPlazaDia: decimal("e57_margenPorPlazaDia", { precision: 8, scale: 4 }),
+  e57_rentabilidadPct: decimal("e57_rentabilidadPct", { precision: 8, scale: 2 }),
+  e57_mortalidadPct: decimal("e57_mortalidadPct", { precision: 5, scale: 2 }),
+  e57_viable: int("e57_viable").notNull().default(1),
+  // Escenario 20-21kg
+  e2021_precioKg: decimal("e2021_precioKg", { precision: 8, scale: 4 }),
+  e2021_ingresosPorAnimal: decimal("e2021_ingresosPorAnimal", { precision: 10, scale: 2 }),
+  e2021_costeTotalPorAnimal: decimal("e2021_costeTotalPorAnimal", { precision: 10, scale: 2 }),
+  e2021_margenPorAnimal: decimal("e2021_margenPorAnimal", { precision: 10, scale: 2 }),
+  e2021_margenTotal: decimal("e2021_margenTotal", { precision: 12, scale: 2 }),
+  e2021_margenPorPlazaDia: decimal("e2021_margenPorPlazaDia", { precision: 8, scale: 4 }),
+  e2021_rentabilidadPct: decimal("e2021_rentabilidadPct", { precision: 8, scale: 2 }),
+  e2021_mortalidadPct: decimal("e2021_mortalidadPct", { precision: 5, scale: 2 }),
+  e2021_viable: int("e2021_viable").notNull().default(1),
+  // Escenario cebo
+  eCebo_precioKg: decimal("eCebo_precioKg", { precision: 8, scale: 4 }),
+  eCebo_ingresosPorAnimal: decimal("eCebo_ingresosPorAnimal", { precision: 10, scale: 2 }),
+  eCebo_costeTotalPorAnimal: decimal("eCebo_costeTotalPorAnimal", { precision: 10, scale: 2 }),
+  eCebo_margenPorAnimal: decimal("eCebo_margenPorAnimal", { precision: 10, scale: 2 }),
+  eCebo_margenTotal: decimal("eCebo_margenTotal", { precision: 12, scale: 2 }),
+  eCebo_margenPorPlazaDia: decimal("eCebo_margenPorPlazaDia", { precision: 8, scale: 4 }),
+  eCebo_rentabilidadPct: decimal("eCebo_rentabilidadPct", { precision: 8, scale: 2 }),
+  eCebo_mortalidadPct: decimal("eCebo_mortalidadPct", { precision: 5, scale: 2 }),
+  eCebo_viable: int("eCebo_viable").notNull().default(1),
+  // Recomendación
+  escenarioRecomendado: varchar("escenarioRecomendado", { length: 20 }),
+  confianzaRecomendacion: decimal("confianzaRecomendacion", { precision: 3, scale: 2 }),
+  // Precios de mercado en el momento del cálculo
+  precioMercadoCebado: decimal("precioMercadoCebado", { precision: 8, scale: 4 }),
+  precioMercadoLechon20: decimal("precioMercadoLechon20", { precision: 8, scale: 2 }),
+  precioMercadoLechon7: decimal("precioMercadoLechon7", { precision: 8, scale: 4 }),
+  precioMercadoPienso: decimal("precioMercadoPienso", { precision: 8, scale: 2 }),
+  // Metadata
+  notas: text("notas"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type HistorialCalculo = typeof historialCalculos.$inferSelect;
+export type InsertHistorialCalculo = typeof historialCalculos.$inferInsert;

@@ -9,6 +9,7 @@ import { crmRouter } from "./routers/crm";
 import { ofertasRouter } from "./routers/ofertas";
 import { actividadRouter } from "./routers/actividad";
 import { mercadoRouter } from "./routers/mercado";
+import { analisisRouter } from "./routers/analisis";
 
 export const appRouter = router({
   system: systemRouter,
@@ -29,6 +30,7 @@ export const appRouter = router({
   ofertas: ofertasRouter,
   actividad: actividadRouter,
   mercado: mercadoRouter,
+  analisis: analisisRouter,
 });
 
 export type AppRouter = typeof appRouter;

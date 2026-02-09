@@ -60,3 +60,15 @@
 - [x] Consulta de precio de pienso actualizado
 - [x] Visualización de tendencias de precios con gráficos históricos
 - [x] Integración de precios de mercado en la calculadora de escenarios
+
+## Fase 8: Análisis de Datos Históricos de Rentabilidad
+- [x] Crear tabla de historial de cálculos de rentabilidad en la base de datos
+- [x] Implementar queries de consulta histórica con filtros por fecha, escenario y lote
+- [x] Crear router tRPC para análisis histórico (guardar cálculos, consultar historial, estadísticas)
+- [x] Desarrollar página de Análisis Histórico con gráficos de evolución temporal (Recharts)
+- [x] Tabla comparativa de lotes con métricas clave (margen, rentabilidad, eficiencia)
+- [x] Gráfico de tendencia de márgenes por escenario a lo largo del tiempo
+- [x] KPIs resumen: mejor lote, peor lote, media de rentabilidad, tendencia general
+- [x] Filtros interactivos por rango de fechas, escenario y número de animales
+- [x] Integrar la nueva sección en la navegación del sidebar
+- [x] Tests vitest para las queries y lógica del análisis histórico (10 tests)

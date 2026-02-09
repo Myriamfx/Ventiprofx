@@ -31,6 +31,7 @@ import {
   Building2,
   Layers,
   Activity,
+  BarChart3,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -44,6 +45,7 @@ const menuItems = [
   { icon: Calculator, label: "Calculadora", path: "/calculadora" },
   { icon: Users, label: "CRM", path: "/crm" },
   { icon: FileText, label: "Ofertas", path: "/ofertas" },
+  { icon: BarChart3, label: "Análisis", path: "/analisis" },
   { icon: Activity, label: "Actividad", path: "/actividad" },
 ];
 

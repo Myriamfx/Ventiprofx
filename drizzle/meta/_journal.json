@@ -15,6 +15,13 @@
       "when": 1770634854402,
       "tag": "0001_free_justin_hammer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1770647615434,
+      "tag": "0002_dry_slapstick",
+      "breakpoints": true
     }
   ]
 }

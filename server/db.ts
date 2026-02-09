@@ -8,6 +8,7 @@ import {
   clientes, InsertCliente,
   ofertas, InsertOferta,
   actividadLog, InsertActividadLog,
+  historialCalculos, InsertHistorialCalculo,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -280,6 +281,85 @@ export async function getActividadLog(limit = 50) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(actividadLog).orderBy(desc(actividadLog.createdAt)).limit(limit);
+}
+
+// ============================================================
+// HISTORIAL DE CÁLCULOS DE RENTABILIDAD
+// ============================================================
+export async function createHistorialCalculo(data: InsertHistorialCalculo) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(historialCalculos).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function getHistorialCalculos(filters?: {
+  userId?: number;
+  loteId?: number;
+  escenarioRecomendado?: string;
+  fechaDesde?: Date;
+  fechaHasta?: Date;
+  limit?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [];
+  if (filters?.userId) conditions.push(eq(historialCalculos.userId, filters.userId));
+  if (filters?.loteId) conditions.push(eq(historialCalculos.loteId, filters.loteId));
+  if (filters?.escenarioRecomendado) conditions.push(eq(historialCalculos.escenarioRecomendado, filters.escenarioRecomendado));
+  if (filters?.fechaDesde) conditions.push(sql`${historialCalculos.createdAt} >= ${filters.fechaDesde}`);
+  if (filters?.fechaHasta) conditions.push(sql`${historialCalculos.createdAt} <= ${filters.fechaHasta}`);
+
+  const query = conditions.length > 0
+    ? db.select().from(historialCalculos).where(and(...conditions)).orderBy(desc(historialCalculos.createdAt)).limit(filters?.limit || 200)
+    : db.select().from(historialCalculos).orderBy(desc(historialCalculos.createdAt)).limit(filters?.limit || 200);
+  return query;
+}
+
+export async function getHistorialStats(userId?: number) {
+  const db = await getDb();
+  if (!db) return { totalCalculos: 0, mejorMargen: null, peorMargen: null, mediaMargen57: 0, mediaMargen2021: 0, mediaMargenCebo: 0, ultimoCalculo: null };
+  const conditions = userId ? [eq(historialCalculos.userId, userId)] : [];
+  const all = conditions.length > 0
+    ? await db.select().from(historialCalculos).where(and(...conditions)).orderBy(desc(historialCalculos.createdAt))
+    : await db.select().from(historialCalculos).orderBy(desc(historialCalculos.createdAt));
+
+  if (all.length === 0) {
+    return { totalCalculos: 0, mejorMargen: null, peorMargen: null, mediaMargen57: 0, mediaMargen2021: 0, mediaMargenCebo: 0, ultimoCalculo: null };
+  }
+
+  // Calcular métricas
+  let mejorMargenTotal = -Infinity;
+  let peorMargenTotal = Infinity;
+  let mejorCalculo: typeof all[0] | null = null;
+  let peorCalculo: typeof all[0] | null = null;
+  let sumaMargen57 = 0, sumaMargen2021 = 0, sumaMargenCebo = 0;
+  let count57 = 0, count2021 = 0, countCebo = 0;
+
+  for (const c of all) {
+    const m57 = parseFloat(c.e57_margenTotal || "0");
+    const m2021 = parseFloat(c.e2021_margenTotal || "0");
+    const mCebo = parseFloat(c.eCebo_margenTotal || "0");
+    const maxMargen = Math.max(m57, m2021, mCebo);
+    const minMargen = Math.min(m57, m2021, mCebo);
+
+    if (maxMargen > mejorMargenTotal) { mejorMargenTotal = maxMargen; mejorCalculo = c; }
+    if (minMargen < peorMargenTotal) { peorMargenTotal = minMargen; peorCalculo = c; }
+
+    if (c.e57_margenTotal) { sumaMargen57 += m57; count57++; }
+    if (c.e2021_margenTotal) { sumaMargen2021 += m2021; count2021++; }
+    if (c.eCebo_margenTotal) { sumaMargenCebo += mCebo; countCebo++; }
+  }
+
+  return {
+    totalCalculos: all.length,
+    mejorMargen: mejorCalculo ? { id: mejorCalculo.id, margen: mejorMargenTotal, fecha: mejorCalculo.createdAt, numAnimales: mejorCalculo.numAnimales, escenario: mejorCalculo.escenarioRecomendado } : null,
+    peorMargen: peorCalculo ? { id: peorCalculo.id, margen: peorMargenTotal, fecha: peorCalculo.createdAt, numAnimales: peorCalculo.numAnimales, escenario: peorCalculo.escenarioRecomendado } : null,
+    mediaMargen57: count57 > 0 ? Math.round((sumaMargen57 / count57) * 100) / 100 : 0,
+    mediaMargen2021: count2021 > 0 ? Math.round((sumaMargen2021 / count2021) * 100) / 100 : 0,
+    mediaMargenCebo: countCebo > 0 ? Math.round((sumaMargenCebo / countCebo) * 100) / 100 : 0,
+    ultimoCalculo: all[0]?.createdAt || null,
+  };
 }
 
 export async function getActividadStats() {
