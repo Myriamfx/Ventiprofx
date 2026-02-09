@@ -251,7 +251,7 @@ export async function obtenerPreciosActuales(): Promise<PrecioMercado[]> {
     precios.push({
       fuente: "Estimado (ref. Mercolleida)",
       mercado: "España",
-      producto: "Lechón 5-7 kg",
+      producto: "Cochinillo 5-7 kg",
       precio: precioLechon57,
       unidad: "€/unidad",
       fecha: ultimoLechon.fecha,

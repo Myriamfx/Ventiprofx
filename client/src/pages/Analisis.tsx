@@ -24,7 +24,7 @@ const ESCENARIO_COLORS = {
 };
 
 const ESCENARIO_LABELS: Record<string, string> = {
-  "5-7kg": "Lechón 5-7 kg",
+  "5-7kg": "Cochinillo 5-7 kg",
   "20-21kg": "Transición 20-21 kg",
   "cebo": "Cebo Final",
 };
@@ -193,7 +193,7 @@ export default function AnalisisPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="5-7kg">Lechón 5-7 kg</SelectItem>
+              <SelectItem value="5-7kg">Cochinillo 5-7 kg</SelectItem>
               <SelectItem value="20-21kg">Transición 20-21 kg</SelectItem>
               <SelectItem value="cebo">Cebo Final</SelectItem>
             </SelectContent>
@@ -361,7 +361,7 @@ export default function AnalisisPage() {
                         contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb" }}
                       />
                       <Legend />
-                      <Area type="monotone" dataKey="5-7kg" name="Lechón 5-7 kg" stroke={ESCENARIO_COLORS["5-7kg"]} fill="url(#color57)" strokeWidth={2} connectNulls />
+                      <Area type="monotone" dataKey="5-7kg" name="Cochinillo 5-7 kg" stroke={ESCENARIO_COLORS["5-7kg"]} fill="url(#color57)" strokeWidth={2} connectNulls />
                       <Area type="monotone" dataKey="20-21kg" name="Transición 20-21 kg" stroke={ESCENARIO_COLORS["20-21kg"]} fill="url(#color2021)" strokeWidth={2} connectNulls />
                       <Area type="monotone" dataKey="cebo" name="Cebo Final" stroke={ESCENARIO_COLORS["cebo"]} fill="url(#colorCebo)" strokeWidth={2} connectNulls />
                     </AreaChart>
@@ -397,7 +397,7 @@ export default function AnalisisPage() {
                         contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb" }}
                       />
                       <Legend />
-                      <Bar dataKey="5-7kg" name="Lechón 5-7 kg" fill={ESCENARIO_COLORS["5-7kg"]} radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="5-7kg" name="Cochinillo 5-7 kg" fill={ESCENARIO_COLORS["5-7kg"]} radius={[4, 4, 0, 0]} />
                       <Bar dataKey="20-21kg" name="Transición 20-21 kg" fill={ESCENARIO_COLORS["20-21kg"]} radius={[4, 4, 0, 0]} />
                       <Bar dataKey="cebo" name="Cebo Final" fill={ESCENARIO_COLORS["cebo"]} radius={[4, 4, 0, 0]} />
                     </BarChart>
@@ -425,7 +425,7 @@ export default function AnalisisPage() {
                       <PolarGrid />
                       <PolarAngleAxis dataKey="metrica" className="text-xs" />
                       <PolarRadiusAxis className="text-xs" />
-                      <Radar name="Lechón 5-7 kg" dataKey="5-7kg" stroke={ESCENARIO_COLORS["5-7kg"]} fill={ESCENARIO_COLORS["5-7kg"]} fillOpacity={0.2} strokeWidth={2} />
+                      <Radar name="Cochinillo 5-7 kg" dataKey="5-7kg" stroke={ESCENARIO_COLORS["5-7kg"]} fill={ESCENARIO_COLORS["5-7kg"]} fillOpacity={0.2} strokeWidth={2} />
                       <Radar name="Transición 20-21 kg" dataKey="20-21kg" stroke={ESCENARIO_COLORS["20-21kg"]} fill={ESCENARIO_COLORS["20-21kg"]} fillOpacity={0.2} strokeWidth={2} />
                       <Radar name="Cebo Final" dataKey="cebo" stroke={ESCENARIO_COLORS["cebo"]} fill={ESCENARIO_COLORS["cebo"]} fillOpacity={0.2} strokeWidth={2} />
                       <Legend />
@@ -525,7 +525,7 @@ export default function AnalisisPage() {
           <Card className="border-l-4" style={{ borderLeftColor: ESCENARIO_COLORS["5-7kg"] }}>
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-sm">Lechón 5-7 kg</h3>
+                <h3 className="font-semibold text-sm">Cochinillo 5-7 kg</h3>
                 <Badge variant="outline" className="text-xs" style={{ color: ESCENARIO_COLORS["5-7kg"], borderColor: ESCENARIO_COLORS["5-7kg"] }}>
                   Promedio
                 </Badge>

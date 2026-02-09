@@ -185,7 +185,7 @@ export default function Home() {
                   <p className="text-xs text-muted-foreground truncate">{p.producto}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <p className="text-xl font-bold">
-                      {typeof p.precio === 'number' && p.precio > 10 ? p.precio.toFixed(0) : (p.precio as number).toFixed(3)}
+                      {typeof p.precio === 'number' ? (p.unidad?.includes('unidad') ? p.precio.toFixed(2) : (p.precio > 10 ? p.precio.toFixed(0) : p.precio.toFixed(3))) : p.precio}
                     </p>
                     <span className="text-xs text-muted-foreground">{p.unidad}</span>
                   </div>

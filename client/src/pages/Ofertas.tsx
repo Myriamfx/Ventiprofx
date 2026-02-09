@@ -58,7 +58,7 @@ const ESTADO_OFERTA_COLORS: Record<string, string> = {
 };
 
 const ESCENARIO_LABELS: Record<string, string> = {
-  "5-7kg": "Lechones 5-7 kg",
+  "5-7kg": "Cochinillos 5-7 kg",
   "20-21kg": "Transición 20-21 kg",
   cebo: "Cebo Final",
 };

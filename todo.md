@@ -83,3 +83,16 @@
 - [x] Fix: Actualizar HTML de ofertas comerciales con unidad correcta (€/unidad vs €/kg vivo)
 - [x] Fix: Actualizar cálculo de precio total en ofertas (lechones: precio*animales, cebo: precio*peso*animales)
 - [x] Tests actualizados: 48 tests, 100% pass
+
+## Bugs - Corrección Nomenclatura y Precios v2
+- [x] Renombrar "Lechón 5-7 kg" a "Cochinillo 5-7 kg" en todo el sistema
+- [x] Asegurar que Cochinillo 5-7 kg muestra precio en €/unidad correctamente
+- [x] Asegurar que Lechón 20 kg muestra precio en €/unidad correctamente
+- [x] Corregir en servicio de precios de mercado (preciosMercado.ts)
+- [x] Corregir en calculadora de rentabilidad (calculadora.ts)
+- [x] Corregir en generador de ofertas (ofertas.ts)
+- [x] Corregir en dashboard (Home.tsx) + formato de visualización €/unidad
+- [x] Corregir en página de calculadora (Calculadora.tsx)
+- [x] Corregir en página de ofertas (Ofertas.tsx)
+- [x] Corregir en página de análisis (Analisis.tsx)
+- [x] Corregir en CRM (Crm.tsx) - tipo comprador cochinillo

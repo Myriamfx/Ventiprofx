@@ -14,7 +14,7 @@ function generarCodigoOferta(): string {
 }
 
 function generarHtmlOferta(oferta: any, cliente: any, lote: any): string {
-  const escenarioLabel = oferta.escenario === "5-7kg" ? "Lechones 5-7 kg"
+  const escenarioLabel = oferta.escenario === "5-7kg" ? "Cochinillos 5-7 kg"
     : oferta.escenario === "20-21kg" ? "Transición 20-21 kg"
     : "Cebo Final 100-110 kg";
 

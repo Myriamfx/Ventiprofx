@@ -46,7 +46,7 @@ import {
 } from "lucide-react";
 
 const TIPO_LABELS: Record<string, string> = {
-  comprador_5_7: "Comprador 5-7 kg",
+  comprador_5_7: "Comprador Cochinillo 5-7 kg",
   comprador_20_21: "Comprador 20-21 kg",
   comprador_cebo: "Comprador Cebo",
   matadero: "Matadero",

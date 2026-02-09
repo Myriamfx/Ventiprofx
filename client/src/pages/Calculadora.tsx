@@ -348,11 +348,11 @@ export default function CalculadoraPage() {
               <Input type="number" value={numAnimales} onChange={(e) => setNumAnimales(e.target.value)} placeholder="500" />
             </div>
             <div className="space-y-2">
-              <Label>Precio 5-7kg (€/unidad) <span className="text-xs text-muted-foreground">opcional</span></Label>
+              <Label>Precio Cochinillo 5-7kg (€/unidad) <span className="text-xs text-muted-foreground">opcional</span></Label>
               <Input type="number" step="0.01" value={precioVenta5_7} onChange={(e) => setPrecioVenta5_7(e.target.value)} placeholder="Auto (mercado)" />
             </div>
             <div className="space-y-2">
-              <Label>Precio 20-21kg (€/unidad) <span className="text-xs text-muted-foreground">opcional</span></Label>
+              <Label>Precio Lechón 20-21kg (€/unidad) <span className="text-xs text-muted-foreground">opcional</span></Label>
               <Input type="number" step="0.01" value={precioVenta20_21} onChange={(e) => setPrecioVenta20_21(e.target.value)} placeholder="Auto (mercado)" />
             </div>
             <div className="space-y-2">

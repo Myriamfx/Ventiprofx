@@ -113,7 +113,7 @@ function calcularEscenarioMejorado(
 
   switch (escenario) {
     case "5-7kg": {
-      nombre = "Venta Lechón 5-7 kg";
+      nombre = "Venta Cochinillo 5-7 kg";
       pesoVenta = 7;
       unidadPrecio = "€/unidad";
       diasOcupacion = usarCostesEstimados ? COSTES_ESTANDAR.cria.dias : (params?.diasEstancia5_7 || 28);
@@ -484,7 +484,7 @@ export const calculadoraRouter = router({
         for (const p of precios) {
           if (p.producto.includes("Cebado")) preciosMercado.cebado = p.precio;
           if (p.producto.includes("Lechón 20")) preciosMercado.lechon20 = p.precio;
-          if (p.producto.includes("Lechón 5-7")) preciosMercado.lechon7 = p.precio;
+          if (p.producto.includes("Cochinillo 5-7")) preciosMercado.lechon7 = p.precio;
         }
       } catch {
         // Si falla, se usarán parámetros manuales o estándar
