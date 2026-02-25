@@ -1,5 +1,8 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +36,7 @@ import {
   Activity,
   BarChart3,
 } from "lucide-react";
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState, FormEvent } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
@@ -63,7 +66,7 @@ export default function DashboardLayout({
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
-  const { loading, user } = useAuth();
+  const { loading, user, refresh } = useAuth();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -74,9 +77,37 @@ export default function DashboardLayout({
   }
 
   if (!user) {
+    // login form state
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const loginMutation = trpc.auth.login.useMutation();
+    const forgotMutation = trpc.auth.requestPasswordReset.useMutation();
+
+    const handleSubmit = async (e: FormEvent) => {
+      e.preventDefault();
+      try {
+        await loginMutation.mutateAsync({ email, password });
+        // reload to trigger auth context and fetch /me with new cookie
+        window.location.reload();
+      } catch (err) {
+        // error will appear in mutation.error
+      }
+    };
+
+    const handleForgot = async () => {
+      let target = email;
+      if (!target) {
+        target = window.prompt("Introduce tu correo para restablecer la contraseña:") || "";
+      }
+      if (!target) return;
+      await forgotMutation.mutateAsync({ email: target });
+      // show a simple confirmation
+      alert("Si existe una cuenta con ese correo, recibirás instrucciones para restablecer la contraseña.");
+    };
+
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
-        <div className="flex flex-col items-center gap-8 p-10 max-w-md w-full bg-white rounded-2xl shadow-xl border border-green-100">
+        <div className="flex flex-col gap-8 p-10 max-w-md w-full bg-white rounded-2xl shadow-xl border border-green-100">
           <div className="flex flex-col items-center gap-4">
             <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-emerald-700 rounded-2xl flex items-center justify-center shadow-lg">
               <span className="text-white text-2xl font-extrabold">VP</span>
@@ -89,15 +120,48 @@ export default function DashboardLayout({
               control.
             </p>
           </div>
-          <Button
-            onClick={() => {
-              window.location.href = getLoginUrl();
-            }}
-            size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all bg-green-700 hover:bg-green-800"
-          >
-            Iniciar sesión
-          </Button>
+          <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>
+            <div>
+              <Label htmlFor="email">Correo electrónico</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            {loginMutation.error && (
+              <p className="text-destructive text-sm">
+                {(loginMutation.error as any).message}
+              </p>
+            )}
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full shadow-lg hover:shadow-xl transition-all bg-green-700 hover:bg-green-800"
+              disabled={loginMutation.isLoading}
+            >
+              {loginMutation.isLoading ? "Iniciando..." : "Iniciar sesión"}
+            </Button>
+            <button
+              type="button"
+              className="text-sm text-primary underline self-start"
+              onClick={handleForgot}
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </form>
         </div>
       </div>
     );
@@ -127,7 +191,7 @@ function DashboardLayoutContent({
   children,
   setSidebarWidth,
 }: DashboardLayoutContentProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, refresh } = useAuth();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -250,6 +314,17 @@ function DashboardLayoutContent({
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Cerrar sesión</span>
+                </DropdownMenuItem>
+                <div className="px-3 py-2 text-xs text-muted-foreground">
+                  Ventipro 1.0
+                </div>
+                <DropdownMenuItem
+                  onClick={() => {
+                    refresh();
+                    window.location.reload();
+                  }}
+                >
+                  Actualizar
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
