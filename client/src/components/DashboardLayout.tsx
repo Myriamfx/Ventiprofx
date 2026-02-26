@@ -66,7 +66,11 @@ export default function DashboardLayout({
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const { loading, user, refresh } = useAuth();
+  const loginMutation = trpc.auth.login.useMutation();
+  const forgotMutation = trpc.auth.requestPasswordReset.useMutation();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -77,11 +81,6 @@ export default function DashboardLayout({
   }
 
   if (!user) {
-    // login form state
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const loginMutation = trpc.auth.login.useMutation();
-    const forgotMutation = trpc.auth.requestPasswordReset.useMutation();
 
     const handleSubmit = async (e: FormEvent) => {
       e.preventDefault();
@@ -105,7 +104,8 @@ export default function DashboardLayout({
       alert("Si existe una cuenta con ese correo, recibirás instrucciones para restablecer la contraseña.");
     };
 
-    return (
+    // Render login form
+    const loginForm = (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
         <div className="flex flex-col gap-8 p-10 max-w-md w-full bg-white rounded-2xl shadow-xl border border-green-100">
           <div className="flex flex-col items-center gap-4">
@@ -165,6 +165,8 @@ export default function DashboardLayout({
         </div>
       </div>
     );
+
+    return loginForm;
   }
 
   return (
