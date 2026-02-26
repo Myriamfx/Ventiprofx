@@ -266,6 +266,23 @@ class SDKServer {
       throw ForbiddenError("Invalid session cookie");
     }
 
+    // MODO DEMOSTRACIÓN: Retornar usuario demo sin acceso a BD
+    if (session.openId === "demo-admin-id") {
+      const demoUser: User = {
+        id: 1,
+        openId: "demo-admin-id",
+        name: "Administrador Demo",
+        email: "myriamfx@hotmail.com",
+        passwordHash: null,
+        loginMethod: "demo",
+        role: "admin",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastSignedIn: new Date(),
+      };
+      return demoUser;
+    }
+
     const sessionUserId = session.openId;
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
