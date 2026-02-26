@@ -13,6 +13,7 @@ import CrmPage from "./pages/Crm";
 import OfertasPage from "./pages/Ofertas";
 import ActividadPage from "./pages/Actividad";
 import AnalisisPage from "./pages/Analisis";
+import UsuariosPage from "./pages/Usuarios";
 
 function Router() {
   return (
@@ -26,6 +27,7 @@ function Router() {
         <Route path="/ofertas" component={OfertasPage} />
         <Route path="/actividad" component={ActividadPage} />
         <Route path="/analisis" component={AnalisisPage} />
+        <Route path="/usuarios" component={UsuariosPage} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

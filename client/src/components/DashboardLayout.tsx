@@ -35,6 +35,7 @@ import {
   Layers,
   Activity,
   BarChart3,
+  Shield,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState, FormEvent } from "react";
 import { useLocation } from "wouter";
@@ -50,6 +51,7 @@ const menuItems = [
   { icon: FileText, label: "Ofertas", path: "/ofertas" },
   { icon: BarChart3, label: "Análisis", path: "/analisis" },
   { icon: Activity, label: "Actividad", path: "/actividad" },
+  { icon: Users, label: "Usuarios", path: "/usuarios" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
